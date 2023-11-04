@@ -1,0 +1,293 @@
+package com;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
+
+public class Onglet extends Tab {
+	static final int TAILLE_POLICE_DEFAUT = 12;
+	File fichierOuvert = null;
+	Stage fermetureStage;
+	int numeroLigne = 1;
+	TextArea zoneDeTexte = new TextArea();
+
+	public Onglet(String title) {
+
+		/*--------------------Les sous ménus du ménu Fichier-----------------*/
+		String[] fileMenuNoms = { "Nouvel Onglet", "Nouvelle fenêtre", "Ouvrir", "Enregister", "Enregister sous",
+				"Enregister tout", "Mise en page", "Imprimer", "Fermer l'onglet", "Fermer la fenêtre", "Quitter" };
+		MenuItem[] fileMenuItem = new MenuItem[fileMenuNoms.length];
+		for (int i = 0; i < fileMenuNoms.length; i++) {
+			fileMenuItem[i] = new MenuItem(fileMenuNoms[i]);
+		}
+		/*--------------------Les sous ménus du ménu Modifier-----------------*/
+		String[] modifierMenuNoms = { "Annuler", "Rétablir", "Couper", "Copier", "Coller", "Supprimer", "Rechercher",
+				"Rechercher suivant", "Rechercher précédent", "Remplacer", "Atteindre", "Tout sélectionner",
+				"Heure/Date", "Police" };
+		MenuItem[] modifierMenuItem = new MenuItem[modifierMenuNoms.length];
+		for (int i = 0; i < modifierMenuNoms.length; i++) {
+			modifierMenuItem[i] = new MenuItem(modifierMenuNoms[i]);
+		}
+		/*--------------------Les sous ménus du ménu Affichage-----------------*/
+		/*--------------------Le sous ménu zoom-----------------*/
+		MenuItem zoomIn = new MenuItem("Zoom avant");
+		MenuItem zoomOut = new MenuItem("Zoom arrière");
+		MenuItem zoomDefault = new MenuItem("Restaurer le zoom par défaut");
+
+		Menu zoom = new Menu("Zoom ");
+		zoom.getItems().addAll(zoomIn, zoomOut, zoomDefault);
+		/*--------------------Le sous ménu de barre d'état-----------------*/
+		CheckMenuItem barreEtatMenuItem = new CheckMenuItem("Barre d'etat");
+
+		/*--------------------Le sous ménu de retour à la ligne-----------------*/
+		CheckMenuItem retourLigne = new CheckMenuItem("Retour automatique à la ligne");
+
+		/*--------------------Création des ménus-----------------*/
+		/*----------Fichier-----------*/
+		Menu fileMenu = new Menu("Fichier");
+		fileMenu.getItems().addAll(fileMenuItem);
+		/*----------Modifer-----------*/
+		Menu modifierMenu = new Menu("Modifier");
+		modifierMenu.getItems().addAll(modifierMenuItem);
+		/*----------Affichage-----------*/
+		Menu affichageMenu = new Menu("Affichage");
+		affichageMenu.getItems().addAll(zoom, barreEtatMenuItem, retourLigne);
+
+		/*--------------------Création du header de notre acceuil-----------------*/
+
+		MenuBar menuBar = new MenuBar(fileMenu, modifierMenu, affichageMenu);
+		Button parametres = new Button("Settings");
+
+		HBox header = new HBox(menuBar, parametres);
+		HBox.setHgrow(menuBar, Priority.ALWAYS);
+
+		/*---------------------Le centre de notre acceuil------------------------*/
+
+		this.setText(title);
+
+		
+
+		zoneDeTexte.setOnDragOver(event -> {
+			if (event.getDragboard().hasString()) {
+				event.acceptTransferModes(TransferMode.ANY);
+			}
+		});
+		zoneDeTexte.setOnDragDropped(event -> {
+			int positionCursor = zoneDeTexte.getCaretPosition();
+			zoneDeTexte.insertText(positionCursor, event.getDragboard().getString());
+		});
+
+		/*---------------------Le footer de notre acceuil------------------------*/
+		Label ligneCol = new Label("Ln1,Col 1");
+		ligneCol.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+
+		Label zoomText = new Label("100%");
+
+		HBox footer = new HBox(ligneCol, zoomText);
+		HBox.setHgrow(ligneCol, Priority.ALWAYS);
+		/*--------------------Ajout des racourcis claviers--------------*/
+		fileMenuItem[0].setAccelerator(KeyCombination.valueOf("Ctrl+N"));
+		fileMenuItem[1].setAccelerator(KeyCombination.valueOf("Ctrl+SHIFT+N"));
+		fileMenuItem[2].setAccelerator(KeyCombination.valueOf("Ctrl+O"));
+		fileMenuItem[3].setAccelerator(KeyCombination.valueOf("Ctrl+S"));
+		fileMenuItem[4].setAccelerator(KeyCombination.valueOf("Ctrl+SHIFT+S"));
+		fileMenuItem[5].setAccelerator(KeyCombination.valueOf("Ctrl+Alt+S"));
+		fileMenuItem[7].setAccelerator(KeyCombination.valueOf("Ctrl+P"));
+		fileMenuItem[8].setAccelerator(KeyCombination.valueOf("Ctrl+W"));
+		fileMenuItem[9].setAccelerator(KeyCombination.valueOf("Ctrl+SHIFT+W"));
+
+		modifierMenuItem[0].setAccelerator(KeyCombination.valueOf("Ctrl+Z"));
+		modifierMenuItem[1].setAccelerator(KeyCombination.valueOf("Ctrl+Y"));
+		modifierMenuItem[2].setAccelerator(KeyCombination.valueOf("Ctrl+X"));
+		modifierMenuItem[3].setAccelerator(KeyCombination.valueOf("Ctrl+C"));
+		modifierMenuItem[4].setAccelerator(KeyCombination.valueOf("Ctrl+V"));
+		modifierMenuItem[5].setAccelerator(KeyCombination.valueOf("Suppr"));
+		modifierMenuItem[6].setAccelerator(KeyCombination.valueOf("Ctrl+F"));
+		modifierMenuItem[7].setAccelerator(KeyCombination.valueOf("F3"));
+		modifierMenuItem[8].setAccelerator(KeyCombination.valueOf("SHIFT+F3"));
+		modifierMenuItem[9].setAccelerator(KeyCombination.valueOf("Ctrl+H"));
+		modifierMenuItem[10].setAccelerator(KeyCombination.valueOf("Ctrl+G"));
+		modifierMenuItem[11].setAccelerator(KeyCombination.valueOf("Ctrl+A"));
+		modifierMenuItem[12].setAccelerator(KeyCombination.valueOf("F5"));
+
+		zoomIn.setAccelerator(KeyCombination.valueOf("Ctrl+ ADD"));
+		zoomOut.setAccelerator(KeyCombination.valueOf("Ctrl+ Subtract"));
+		zoomDefault.setAccelerator(KeyCombination.valueOf("Ctrl+0"));
+
+		/*----------------------Gestion des évennements sur les menus---------------*/
+
+		/*------------Fichier-------------*/
+		fileMenuItem[10].setOnAction(event -> {
+			Platform.exit();
+		});
+		fileMenuItem[9].setOnAction(event -> {
+		});
+		fileMenuItem[4].setOnAction(event -> {
+			FileChooser saveChooser = new FileChooser();
+			saveChooser.setTitle("Enrégister sous");
+			saveChooser.setInitialFileName("Nouveau Document.txt");
+			saveChooser.getExtensionFilters().add(new ExtensionFilter("Fichier txt", "*.txt"));
+			File save = saveChooser.showSaveDialog(Main.window);
+				
+				try {
+					if (save != null && save.createNewFile()) {
+						saveAs(save);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+		});
+		fileMenuItem[3].setOnAction(event -> {
+			try {
+				save();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		fileMenuItem[2].setOnAction(event -> {
+			FileChooser fileChooser = new FileChooser();
+			File fichierChoisi = fileChooser.showOpenDialog(null);
+			if (fichierChoisi != null) {
+				this.setText(fichierChoisi.getName());
+				try {
+					fichierOuvert = fichierChoisi;
+					BufferedReader br = new BufferedReader(new FileReader(fichierChoisi));
+					String line = "";
+					zoneDeTexte.clear();
+					while (line != null) {
+						line = br.readLine();
+						if (line != null)
+							zoneDeTexte.appendText("\n" /* + numeroLigne++ + "  " */ + line);
+					}
+					br.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		fileMenuItem[1].setOnAction(event -> {
+			try {
+				new Main().start(new Stage());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+		fileMenuItem[0].setOnAction(event -> {
+			Main.newOnglet();
+		});
+
+		/*------------Modifier-------------*/
+
+		modifierMenuItem[0].disableProperty().bind(zoneDeTexte.undoableProperty().not());
+		modifierMenuItem[1].disableProperty().bind(zoneDeTexte.redoableProperty().not());
+//			Timeline boucle = new Timeline(new KeyFrame(new Duration(5), e->{
+//				Clipboard presse = Clipboard.getSystemClipboard();
+//				modifierMenuItem[3].setDisable(!modifierMenuItem[3].isDisable());
+//			}));
+//			boucle.setCycleCount(Animation.INDEFINITE);
+//			boucle.play();
+
+//			modifierMenuItem[1].disableProperty().bind(zoneDeTexte.property);
+
+		modifierMenuItem[0].setOnAction(event -> {
+			zoneDeTexte.undo();
+		});
+		modifierMenuItem[1].setOnAction(event -> {
+			zoneDeTexte.redo();
+		});
+		modifierMenuItem[2].setOnAction(event -> {
+			zoneDeTexte.cut();
+		});
+		modifierMenuItem[3].setOnAction(event -> {
+			zoneDeTexte.copy();
+		});
+		modifierMenuItem[4].setOnAction(event -> {
+			zoneDeTexte.paste();
+		}); // 15:11 28/05/2023
+		modifierMenuItem[5].setOnAction(event -> {
+			zoneDeTexte.replaceSelection("");
+		});
+		modifierMenuItem[12].setOnAction(event -> {
+			SimpleDateFormat format = new SimpleDateFormat("HH:mm  dd/MM/yyyy");
+			String date = format.format(new Date());
+			int positionCursor = zoneDeTexte.getCaretPosition();
+			zoneDeTexte.insertText(positionCursor, date);
+		});
+		modifierMenuItem[11].setOnAction(event -> {
+			zoneDeTexte.selectAll();
+		});
+		modifierMenuItem[10].setOnAction(event -> {
+			Alert d = new Alert(AlertType.INFORMATION);
+			d.setHeaderText("");
+			d.showAndWait();
+		});
+		/*------------Affichage-------------*/
+		zoomIn.setOnAction(event -> {
+			zoneDeTexte.setFont(Font.font(zoneDeTexte.getFont().getSize() + 2));
+		});
+		zoomOut.setOnAction(event -> {
+			zoneDeTexte.setFont(Font.font(zoneDeTexte.getFont().getSize() - 2));
+		});
+		zoomDefault.setOnAction(event -> {
+			zoneDeTexte.setFont(Font.font(TAILLE_POLICE_DEFAUT));
+		});
+
+		/*---------------------Le root,scene et autres------------------------*/
+		BorderPane root = new BorderPane(zoneDeTexte);
+		root.setTop(header);
+		root.setBottom(footer);
+		this.setContent(root);
+
+	}
+	
+	private void saveAs(File file) {
+		try {
+			BufferedWriter br = new BufferedWriter(new FileWriter(file));
+			br.write(zoneDeTexte.getText());
+			br.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	void save() throws Exception {
+		if(fichierOuvert !=null) {
+			if(!fichierOuvert.exists()) fichierOuvert.createNewFile();
+			try {
+				BufferedWriter br = new BufferedWriter(new FileWriter(fichierOuvert));
+				br.write(zoneDeTexte.getText());
+				br.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+}
